@@ -4,11 +4,11 @@ A self-hosted Wazuh SIEM/XDR stack, deployed with Docker Compose and configured 
 
 ### Hardware
 
-Rapsberry Pi 2 Model B
-Laptop 1 - Running Surricata
-Laptop 2 - Running Wazuh
-GFiber Router+Modem-Combo device
-TPLink Unmanaged Switch
+- Rapsberry Pi 2 Model B
+- Laptop 1 - Running Surricata
+- Laptop 2 - Running Wazuh
+- GFiber Router+Modem-Combo device
+- TPLink Unmanaged Switch
 
 ### Architecture
 
