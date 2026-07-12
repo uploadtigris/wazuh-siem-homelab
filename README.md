@@ -18,3 +18,4 @@ graph TD
   classDef agent stroke-width:3px;
   class SURICATA,WAZUH,MACBOOK agent;
 ```
+### CIS Configurations
