@@ -19,3 +19,8 @@ graph TD
   class SURICATA,WAZUH,MACBOOK agent;
 ```
 ### CIS Configurations
+
+Through the Wazuh Dashboard, I found that there are ~100 critical vulnerabilities on the two laptops running Ubuntu based on the CIS benchmarks.
+
+Following is the plan for hardening these machines, using the Wazuh dashboard report as a proxy for progress:
+
