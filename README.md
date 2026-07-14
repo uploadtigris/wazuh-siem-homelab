@@ -1,6 +1,8 @@
-# wazuh-siem-homelab
+# Wazuh SIEM & XDR Homelab
 
-A self-hosted Wazuh SIEM/XDR stack, deployed with Docker Compose and configured through Ansible. Agents on hardened Linux hosts provide file integrity monitoring, CIS security configuration assessment, and detection rules mapped to MITRE ATT&CK. Terraform provisions the AWS-side log delivery (S3 + SQS with scoped IAM) so the same SIEM ingests CloudTrail and GuardDuty from the aws-secure-baseline account. one correlation point for on-prem and cloud. The write-up covers rule tuning, false-positive triage, and what I alert on versus suppress.
+A production-styled Wazuh deployment that treats a home network the way a SOC
+treats an enterprise: agents everywhere, cloud telemetry in the same pane, and
+every detection decision written down.
 
 ## Physical Homelab Implementation
 
@@ -10,6 +12,35 @@ A self-hosted Wazuh SIEM/XDR stack, deployed with Docker Compose and configured 
 - Laptop 2 - Running Wazuh
 - GFiber Router+Modem-Combo device
 - TPLink Unmanaged Switch
+
+## What it does
+- **SIEM/XDR core** deployed with Docker Compose (indexer, manager, dashboard),
+  configuration managed through Ansible rather than console clicks
+- **Endpoint coverage:** Wazuh agents on hardened Linux hosts providing file
+  integrity monitoring, CIS security configuration assessment, and detection
+  rules mapped to MITRE ATT&CK
+- **Cloud ingestion:** Terraform provisions the AWS log-delivery path
+  (S3 + SQS with scoped IAM) so the same SIEM correlates CloudTrail and
+  GuardDuty findings alongside on-prem alerts
+- **Tuning as a deliverable:** documented rule tuning and false-positive
+  triage — what I alert on, what I suppress, and why
+
+## Why it's built this way
+A SIEM you only installed proves nothing; the signal is in the decisions.
+Each detection documents the threat it catches, the noise it generates,
+and the tuning applied. Alert-to-suppression reasoning lives in
+[`docs/tuning-log.md`](docs/tuning-log.md).
+
+## Stack
+Wazuh · Docker Compose · Ansible · Terraform · AWS (S3, SQS, IAM,
+CloudTrail, GuardDuty) · MITRE ATT&CK
+
+## Status & roadmap
+- [x] Core stack deployed via Docker Compose
+- [x] Linux agents enrolled with FIM + SCA policies
+- [ ] CloudTrail/GuardDuty ingestion pipeline (Terraform)
+- [ ] Python alert-enrichment script (threat-intel lookups on source IPs)
+- [ ] Full tuning writeup
 
 ### Architecture
 
