@@ -51,7 +51,7 @@ graph LR
   MGR -. "active response<br/>(quarantine, see companion repo)" .-> NET["Network enforcement"]
 ```
 
-## CIS hardening: measured, not claimed
+## CIS hardening:
 
 Wazuh's SCA module benchmarked both Ubuntu hosts against CIS: the initial
 scan surfaced **~100 failed checks per host**. That baseline is the
