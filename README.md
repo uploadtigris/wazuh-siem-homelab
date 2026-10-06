@@ -4,7 +4,10 @@ A self-hosted Wazuh SIEM for my home network. I ran it once with agents on my
 Linux and macOS machines; I'm rebuilding it on my home server so it collects
 logs from the network itself: pfSense firewall logs and Pi-hole DNS queries.
 
-**Status means what it says:** ![done](https://img.shields.io/badge/done-2E7D32) was built and worked,
+**Status means what it says:** 
+
+![done](https://img.shields.io/badge/done-2E7D32) was built and worked,
+
 ![planned](https://img.shields.io/badge/planned-757575) is designed but not started.
 
 > The first build **no longer runs**. The rebuild is planned for late October 2026,
