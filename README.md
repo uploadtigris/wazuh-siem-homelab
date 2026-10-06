@@ -1,97 +1,55 @@
-# Wazuh SIEM & XDR Homelab
+# Wazuh SIEM Homelab
 
-A production-styled Wazuh deployment that treats a home network the way a SOC
-treats an enterprise: agents everywhere, cloud telemetry in the same pane, and
-every detection decision written down.
+A self-hosted Wazuh SIEM for my home network. I ran it once with agents on my
+Linux and macOS machines; I'm rebuilding it on my home server so it collects
+logs from the network itself: pfSense firewall logs and Pi-hole DNS queries.
 
-> Companion repos: [`segmented-network-ids-lab`](../segmented-network-ids-lab)
-> (the network this SIEM monitors: VLAN zones, pfSense policy, Suricata sensor) ·
-> [`hardened-linux-image-pipeline`](../hardened-linux-image-pipeline)
-> (build-time hardening that this SIEM verifies at runtime)
+**Status means what it says:** ![done](https://img.shields.io/badge/done-2E7D32) was built and worked,
+![planned](https://img.shields.io/badge/planned-757575) is designed but not started.
 
-## What it does
+> The first build **no longer runs**. The rebuild is planned for late October 2026,
+> after my VLAN segmentation is finished
+> ([my_home_lab](https://github.com/uploadtigris/my_home_lab)).
 
-- **SIEM/XDR core** deployed with Docker Compose (indexer, manager, dashboard),
-  configuration managed through Ansible rather than console clicks
-- **Endpoint coverage:** Wazuh agents across Linux and macOS providing file
-  integrity monitoring, CIS security configuration assessment (SCA), and
-  detection rules mapped to MITRE ATT&CK
-- **Network detection ingestion:** Suricata alerts (`eve.json`) ship from the
-  sensor's Wazuh agent to the manager for correlation with host telemetry,
-  creating one alert stream for network- and host-level detections
-- **Cloud ingestion:** Terraform provisions the AWS log-delivery path
-  (S3 + SQS with scoped IAM) so the same SIEM correlates CloudTrail and
-  GuardDuty findings alongside on-prem alerts
-- **Tuning as a deliverable:** documented rule tuning and false-positive
-  triage covering what I alert on, what I suppress, and why
+## What I built before ![done](https://img.shields.io/badge/done-2E7D32)
 
-## Where it runs
+- Deployed the Wazuh stack (indexer, manager, dashboard) with Docker Compose.
+- Enrolled Wazuh agents on Linux (Ubuntu) and macOS with file integrity
+  monitoring and security configuration assessment (SCA) policies.
+- Ran Wazuh's CIS benchmark checks on two Ubuntu hosts. The first scan
+  showed about 100 failed checks per host. That is the baseline the rebuild
+  starts from.
+- Used Wazuh's built-in rules, which tag alerts with MITRE ATT&CK techniques.
 
-The SIEM sits on the segmented network documented in the
-[companion repo](../segmented-network-ids-lab): the Wazuh manager
-(Dell Latitude, Ubuntu + Docker) lives in the management VLAN alongside
-pfSense and the managed switch; the Suricata sensor (Dell Latitude, Proxmox)
-watches inter-zone traffic from a SPAN port; agents run on endpoints across
-the trusted zones. Network design decisions live there. This repo covers
-what the SIEM does with the telemetry.
+## The rebuild ![planned](https://img.shields.io/badge/planned-757575)
 
-## Telemetry flow
+Where it runs: a Dell Latitude 7490 (Ubuntu, 16 GB RAM) in the Servers VLAN
+(`10.0.50.0/24`), as a single-node Wazuh install in Docker with the indexer's
+Java heap capped at about 2 GB so it shares the box with my other tools.
 
-```mermaid
-graph LR
-  subgraph Sources
-    EP["Endpoint agents<br/>Linux · macOS<br/>FIM · SCA · MITRE rules"]
-    SUR["Suricata sensor<br/>eve.json via Wazuh agent"]
-    AWS["AWS: CloudTrail · GuardDuty<br/>S3 + SQS, scoped IAM (Terraform)"]
-  end
-  EP --> MGR["Wazuh manager<br/>correlation · severity · response"]
-  SUR --> MGR
-  AWS --> MGR
-  MGR --> DASH["Dashboard<br/>alerting · SCA posture"]
-  MGR -. "active response<br/>(quarantine, see companion repo)" .-> NET["Network enforcement"]
-```
+What it collects:
 
-## CIS hardening:
+| Source | How it gets to Wazuh | Why |
+|---|---|---|
+| pfSense firewall | Remote syslog, UDP 514 | See blocked and allowed traffic between VLANs |
+| Pi-hole (Raspberry Pi 2) | Wazuh agent, or rsyslog if the agent doesn't support the Pi's 32-bit ARM | See DNS queries from every device, including IoT |
+| Latitude (the server itself) | Wazuh agent | File integrity and CIS checks on the server |
+| My laptop | Wazuh agent | File integrity and CIS checks on a daily-use machine |
 
-Wazuh's SCA module benchmarked both Ubuntu hosts against CIS: the initial
-scan surfaced **~100 failed checks per host**. That baseline is the
-"before". The SCA dashboard becomes the progress metric, re-scanned after
-each remediation batch.
+## Roadmap
 
-Remediation plan, in priority order:
-
-1. **Baseline capture:** initial SCA reports exported as artifacts
-   ([`docs/sca-baseline/`](docs/sca-baseline/))
-2. **Triage failed checks** into three buckets: remediate now (auth, SSH,
-   logging, kernel), remediate via automation, and accept-with-reasoning,
-   where each accepted finding documents the risk and why
-3. **Remediate through the shared Ansible CIS role** from the
-   [golden-image pipeline](../hardened-linux-image-pipeline), proving the
-   role works on live systems, not just fresh builds
-4. **Re-scan and diff:** the before/after delta is the deliverable
-5. **Continuous verification:** scheduled SCA runs surface configuration
-   drift as a dashboard regression, not a surprise
-
-## Why it's built this way
-
-A SIEM you only installed proves nothing; the signal is in the decisions.
-Each detection documents the threat it catches, the noise it generates,
-and the tuning applied. Alert-to-suppression reasoning lives in
-[`docs/tuning-log.md`](docs/tuning-log.md).
+- [x] Wazuh stack deployed with Docker Compose (first build, no longer running)
+- [x] Linux and macOS agents enrolled with file integrity monitoring and SCA
+- [x] CIS baseline captured: about 100 failed checks per Ubuntu host
+- [ ] Rebuild single-node Wazuh on the Latitude with a capped indexer heap
+- [ ] Agents on the Latitude and my laptop
+- [ ] pfSense remote syslog into Wazuh
+- [ ] Pi-hole logs into Wazuh (agent or rsyslog, with the reason written down)
+- [ ] Sort failed CIS checks into fix now, fix with a script, or accept with a reason
+- [ ] Fix the first batch and re-scan; record the before and after scores
+- [ ] A short tuning log: which alerts I keep, which I silence, and why
+- [ ] Later: alerts from a Suricata sensor on the segmented network
 
 ## Stack
 
-Wazuh · Docker Compose · Ansible · Terraform · AWS (S3, SQS, IAM,
-CloudTrail, GuardDuty) · Suricata · MITRE ATT&CK · CIS Benchmarks
-
-## Status & roadmap
-
-- [x] Core stack deployed via Docker Compose
-- [x] Linux + macOS agents enrolled with FIM + SCA policies
-- [x] CIS SCA baseline captured (~100 failed checks per Ubuntu host)
-- [x] Suricata `eve.json` ingestion from the network sensor
-- [ ] SCA triage: remediate / automate / accept-with-reasoning
-- [ ] CIS remediation via shared Ansible role, with before/after scores
-- [ ] CloudTrail/GuardDuty ingestion pipeline (Terraform)
-- [ ] Python alert-enrichment script (threat-intel lookups on source IPs)
-- [ ] Full tuning writeup
+Wazuh · Docker Compose · Ubuntu · macOS · pfSense syslog · Pi-hole · CIS Benchmarks · MITRE ATT&CK
