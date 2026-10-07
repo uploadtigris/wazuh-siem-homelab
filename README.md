@@ -39,6 +39,19 @@ What it collects:
 | Latitude (the server itself) | Wazuh agent | File integrity and CIS checks on the server |
 | My laptop | Wazuh agent | File integrity and CIS checks on a daily-use machine |
 
+## What's in this repo
+
+| Path | What it holds |
+|---|---|
+| `README.md` | What was built, the rebuild plan, the roadmap |
+| [`docs/01_installing-docker.md`](docs/01_installing-docker.md) | First build: host firewall ports and agent enrollment |
+| [`docs/02_configuring-wazuh.md`](docs/02_configuring-wazuh.md) | First build: Wazuh in Docker Compose |
+| [`docs/03_importing-suricata-data.md`](docs/03_importing-suricata-data.md) | First build: a stub, not finished |
+| [`images/`](images/) | Screenshots |
+
+The notes in `docs/` describe the first build, which no longer runs. Notes for the
+rebuild get added here as it happens.
+
 ## Roadmap
 
 - [x] Wazuh stack deployed with Docker Compose (first build, no longer running)
