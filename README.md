@@ -44,13 +44,11 @@ What it collects:
 | Path | What it holds |
 |---|---|
 | `README.md` | What was built, the rebuild plan, the roadmap |
-| [`docs/01_installing-docker.md`](docs/01_installing-docker.md) | First build: host firewall ports and agent enrollment |
-| [`docs/02_configuring-wazuh.md`](docs/02_configuring-wazuh.md) | First build: Wazuh in Docker Compose |
-| [`docs/03_importing-suricata-data.md`](docs/03_importing-suricata-data.md) | First build: a stub, not finished |
+| [`docs/build-log.md`](docs/build-log.md) | Step-by-step checklist, verification matrix and problems hit for the rebuild |
+| [`docs/archive-2026-07/`](docs/archive-2026-07/) | Notes from the first build in July 2026 (no longer runs, kept for the record) |
 | [`images/`](images/) | Screenshots |
 
-The notes in `docs/` describe the first build, which no longer runs. Notes for the
-rebuild get added here as it happens.
+The rebuild is logged in `docs/build-log.md` as it happens.
 
 ## Roadmap
 
