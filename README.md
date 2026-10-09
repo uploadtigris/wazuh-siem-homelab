@@ -11,8 +11,8 @@ logs from the network itself: pfSense firewall logs and Pi-hole DNS queries.
 ![planned](https://img.shields.io/badge/planned-757575) is designed but not started.
 
 > The first build **no longer runs**. The rebuild is planned for late October 2026,
-> after my VLAN segmentation is finished
-> ([my_home_lab](https://github.com/uploadtigris/my_home_lab)).
+> now that my VLAN segmentation is finished
+> ([network-segmentation-ids](https://github.com/uploadtigris/network-segmentation-ids)).
 
 ## What I built before ![done](https://img.shields.io/badge/done-2E7D32)
 
@@ -26,8 +26,8 @@ logs from the network itself: pfSense firewall logs and Pi-hole DNS queries.
 
 ## The rebuild ![planned](https://img.shields.io/badge/planned-757575)
 
-Where it runs: a Dell Latitude 7490 (Ubuntu, 16 GB RAM) in the Servers VLAN
-(`10.0.50.0/24`), as a single-node Wazuh install in Docker with the indexer's
+Where it runs: a Dell Latitude 7490 (Ubuntu, 16 GB RAM) that moves to the Servers VLAN
+(`10.0.50.0/24`) when NextCloud is set up, as a single-node Wazuh install in Docker with the indexer's
 Java heap capped at about 2 GB so it shares the box with my other tools.
 
 What it collects:
