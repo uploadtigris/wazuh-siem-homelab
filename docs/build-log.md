@@ -6,7 +6,7 @@
 > security reasons.
 
 **Date:** 2026-10-24 (planned) to 2026-10-__  
-**OS:** Ubuntu (Latitude), Raspberry Pi OS, pfSense, macOS  
+**OS:** Ubuntu (Latitude 5420), Raspberry Pi OS, pfSense, macOS  
 **Environment:** Homelab  
 **Category:** SIEM, Logging, Detection, Hardening  
 **Status:** Planned (starts after the segmentation build is finished)
@@ -27,14 +27,15 @@ _What did the first build do, and why rebuild it?_
 
 ## Task
 
-Rebuild Wazuh as a single node on the Latitude so it collects logs from the network
-itself, and prove each source reaches the dashboard.
+Rebuild Wazuh as a single node on a Dell Latitude 5420 (32 GB) so it collects logs from the
+network itself, and prove each source reaches the dashboard. The 5420 sits on switch port 7,
+in the Servers VLAN, at 10.0.50.30 in this demo scheme.
 
 | Source | Where it runs | How it reaches Wazuh | Why |
 |---|---|---|---|
 | pfSense firewall | Router | Remote syslog, UDP 514 | Blocked and allowed traffic between VLANs |
 | Pi-hole | Raspberry Pi 2 | Agent, or rsyslog (reason written down) | DNS queries from every device |
-| Latitude | Servers VLAN | Wazuh agent | File integrity and CIS checks on the server |
+| Latitude 5420 (the Wazuh server) | Servers VLAN, switch port 7 | Wazuh agent | File integrity and CIS checks on the server |
 | Laptop | Trusted VLAN | Wazuh agent (the one Trusted agent) | File integrity and CIS checks on a daily-use machine |
 
 Done when: every row of the verification matrix below passes, or the failure is documented.
@@ -46,16 +47,29 @@ Tick each item when it is done and the evidence is saved. Add the date to each s
 ### 0. Before touching anything — Date: ____
 
 - [ ] Segmentation build finished and the test matrix passed
-- [ ] Latitude is on the Servers VLAN (it moves from Mgmt when NextCloud is set up)
-- [ ] Free disk space and RAM on the Latitude checked and written down
+- [ ] The 5420 is on switch port 7, which moves from the Trusted spare to Servers: untagged in VLAN 50, PVID 50, excluded from VLAN 1
+- [ ] The 5420 has a static Servers address (10.0.50.30 in this demo scheme)
+- [ ] Free disk space and RAM on the 5420 checked and written down
 - [ ] Config backups of pfSense and the Pi-hole taken
 - [ ] Old first-build notes moved to `archive-2026-07/` (done)
 
-### 1. Wazuh single node on the Latitude — Date: ____
+### 0.5 pfSense: let the Wazuh server reach the internet — Date: ____
+
+_Why: the only Servers pass rule today is the Pi-hole's, so a second server on Servers would have no internet to pull Docker images or updates. Its DNS goes to the Pi-hole on the same VLAN, so DNS needs no rule._
+
+| Interface | Action | Source | Destination | Port | Why |
+|---|---|---|---|---|---|
+| Servers | Pass | `WAZUH_SERVER` | any | TCP 80 and 443, UDP 123 | Image pulls, updates and time. It sits below the Servers blocks, because first match wins |
+
+- [ ] Create the alias `WAZUH_SERVER` (the 5420's Servers address)
+- [ ] Add the rule below the two Servers block rules
+- [ ] Verify from the 5420: HTTPS to the internet works, and a connection to another VLAN times out
+- [ ] Evidence: the rule, and the two test results
+
+### 1. Wazuh single node on the Latitude 5420 — Date: ____
 
 - [ ] Docker and Docker Compose confirmed working
 - [ ] Single-node Wazuh stack deployed (indexer, manager, dashboard)
-- [ ] Indexer Java heap capped at about 2 GB
 - [ ] Dashboard published on host port 8443 (443 stays free for NextCloud), reached from the laptop only (see step 1.5)
 - [ ] Evidence: screenshot of the running containers and the dashboard
 
@@ -73,24 +87,24 @@ _Placeholder: Dashboard_ — the Wazuh dashboard loaded from the laptop on TCP 8
 
 ### 1.5 pfSense: one narrow Trusted exception for Wazuh — Date: ____
 
-_Why: the Trusted rules block every internal network, so nothing on Trusted can reach the Latitude. The laptop is the one Trusted device that needs it: it is the one Trusted agent and the only dashboard client. I'm opening one narrow rule for it, not wired Mgmt access and not a general Trusted-to-Servers path._
+_Why: the Trusted rules block every internal network, so nothing on Trusted can reach the Wazuh server (the 5420). The laptop is the one Trusted device that needs it: it is the one Trusted agent and the only dashboard client. I'm opening one narrow rule for it, not wired Mgmt access and not a general Trusted-to-Servers path._
 
 | Interface | Action | Source | Destination | Port | Why |
 |---|---|---|---|---|---|
-| Trusted | Pass | `WAZUH_LAPTOP` | The Latitude (10.0.50.20) | TCP `WAZUH_PORTS` (1514, 1515, 8443) | The laptop is the one Trusted agent (1514, 1515) and the only dashboard client (8443). It sits above the `PRIVATE_NETS` block, because first match wins |
+| Trusted | Pass | `WAZUH_LAPTOP` | The 5420 (10.0.50.30) | TCP `WAZUH_PORTS` (1514, 1515, 8443) | The laptop is the one Trusted agent (1514, 1515) and the only dashboard client (8443). It sits above the `PRIVATE_NETS` block, because first match wins |
 
-Everything else from Trusted to the Latitude stays blocked.
+Everything else from Trusted to the 5420 stays blocked.
 
 - [ ] Give the laptop a DHCP static mapping on the Trusted VLAN, if it doesn't have one
 - [ ] Create the alias `WAZUH_LAPTOP` (the laptop's Trusted address) and the port alias `WAZUH_PORTS` (1514, 1515, 8443)
 - [ ] Add the rule above, above the Trusted `PRIVATE_NETS` block
-- [ ] Verify from the laptop: the dashboard loads on 8443, and other ports on the Latitude (443, SSH) still time out
+- [ ] Verify from the laptop: the dashboard loads on 8443, and other ports on the 5420 (443, SSH) still time out
 - [ ] Verify from another Trusted device: the dashboard and the agent ports time out
 - [ ] Evidence: the rule, and the two test results
 
 ### 2. Host firewall and agent ports — Date: ____
 
-- [ ] List open ports on the Latitude and note why each is open
+- [ ] List open ports on the 5420 and note why each is open
 - [ ] Allow agent traffic only from the machines that need it: the laptop (through the rule in step 1.5), the Pi-hole and pfSense
 - [ ] Confirm the agent ports are not reachable from IoT, Guest or any Trusted device except the laptop
 - [ ] Evidence: the firewall rules and the open-port list
@@ -99,9 +113,9 @@ Everything else from Trusted to the Latitude stays blocked.
 # notes, commands, output
 ```
 
-### 3. Agents: Latitude and laptop — Date: ____
+### 3. Agents: the Wazuh server and laptop — Date: ____
 
-- [ ] Agent enrolled on the Latitude
+- [ ] Agent enrolled on the Wazuh server (the 5420)
 - [ ] Agent enrolled on the laptop (the one Trusted agent)
 - [ ] Both agents show as active in the dashboard
 - [ ] File integrity monitoring and SCA running on both
@@ -150,7 +164,7 @@ _Placeholder: Pi-hole query in Wazuh_ — a DNS query from another VLAN
 
 ### 6. CIS baseline: sort, fix, re-scan — Date: ____
 
-- [ ] Run the CIS scan on the Latitude and the laptop; record the starting score
+- [ ] Run the CIS scan on the Wazuh server and the laptop; record the starting score
 - [ ] Sort every failed check: fix now, fix with a script, or accept with a reason
 - [ ] Fix the first batch
 - [ ] Re-scan and record the before and after scores
@@ -158,7 +172,7 @@ _Placeholder: Pi-hole query in Wazuh_ — a DNS query from another VLAN
 
 | Host | Before | After | Fixed | Accepted (with reason) |
 |---|---|---|---|---|
-| Latitude | | | | |
+| Wazuh server (5420) | | | | |
 | Laptop | | | | |
 
 **Screenshots**
@@ -183,8 +197,8 @@ Screenshot every result.
 
 | # | Test | From | What I do | Expected | Actual | Pass |
 |---|---|---|---|---|---|:-:|
-| 1 | Agents report in | Latitude, laptop | Check the agents list | Both active | | ☐ |
-| 2 | File integrity alert | Latitude | Change a monitored file | Alert in the dashboard | | ☐ |
+| 1 | Agents report in | Wazuh server, laptop | Check the agents list | Both active | | ☐ |
+| 2 | File integrity alert | Wazuh server | Change a monitored file | Alert in the dashboard | | ☐ |
 | 3 | pfSense block shows up | Guest or IoT device | Try a blocked connection | Event in Wazuh | | ☐ |
 | 4 | Pi-hole queries show up | IoT device | Look up a domain | Query in Wazuh | | ☐ |
 | 5 | Agent ports closed to other VLANs | Guest or IoT device | Try the agent port | Fails | | ☐ |
